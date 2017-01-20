@@ -9,7 +9,22 @@ const $ = require('gulp-load-plugins')({
   DEBUG: process.env.DEBUG,
 });
 
-gulp.task('clean', () => del(['dist']));
+const config = Object.freeze({
+  clean: ['dist'],
+  js: {
+    entry: 'js/main.js',
+    src: 'js/**/*.js',
+    out: 'dist/js/',
+  },
+  sass: {
+    src: 'sass/**/*.sass',
+    out: 'dist/css/',
+  },
+});
+
+gulp.task('clean', () => {
+  config.clean.map(path => del(path));
+});
 
 gulp.task('lint', () => {
   return gulp.src(['**/*.js', '!node_modules/**', '!dist/**'])
@@ -19,20 +34,20 @@ gulp.task('lint', () => {
 });
 
 gulp.task('js:dev', ['lint'], () => {
-  return gulp.src('js/**/*.js')
+  return gulp.src(config.js.src)
     .pipe($.sourcemaps.init())
     .pipe($.babel())
     .pipe($.sourcemaps.write())
-    .pipe(gulp.dest('dist/js'));
+    .pipe(gulp.dest(config.js.out));
 });
 
 gulp.task('sass:dev', () => {
-  return gulp.src('sass/**/*.sass')
+  return gulp.src(config.sass.src)
     .pipe($.sourcemaps.init())
     .pipe($.sass().on('error', $.sass.logError))
     .pipe($.autoprefixer())
     .pipe($.sourcemaps.write())
-    .pipe(gulp.dest('dist/css'))
+    .pipe(gulp.dest(config.sass.out))
     .pipe(browserSync.reload({ stream: true }));
 });
 
@@ -77,12 +92,12 @@ gulp.task('browser-sync', ['nodemon'], () => {
   });
 });
 
-gulp.task('bs-reload', () => {
+gulp.task('bs-reload-js', ['js:dev'], () => {
   browserSync.reload();
 });
 
 gulp.task('serve', ['browser-sync'], () => {
-  gulp.watch('js/**/*.js', ['js:dev', 'bs-reload']);
+  gulp.watch('js/**/*.js', ['bs-reload-js']);
   gulp.watch('sass/**/*.sass', ['sass:dev']);
 });
 
